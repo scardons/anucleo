@@ -214,13 +214,7 @@ const Footer = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <div className="py-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              Designed with{' '}
-              <Heart className="inline h-4 w-4 text-red-500 mx-1" />
-              by <span className="font-medium text-foreground">Gunner</span>
-            </p>
-          </div>
+
         </motion.div>
       </div>
     </footer>
