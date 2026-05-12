@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import StepCoverage from '@/components/quote/StepCoverage';
+import StepIndustry from '@/components/quote/StepIndustry';
 import StepBusiness from '@/components/quote/StepBusiness';
 import StepContact from '@/components/quote/StepContact';
 import StepFinish from '@/components/quote/StepFinish';
@@ -13,6 +14,7 @@ import StepFinish from '@/components/quote/StepFinish';
 interface FormData {
   industry: string;
   workTypes: string[];
+  contractingTypes: string[];
   businessCharacteristics: string[];
   email: string;
   firstName: string;
@@ -32,6 +34,7 @@ const GetQuote = () => {
   const [formData, setFormData] = useState<FormData>({
     industry: industryFromUrl,
     workTypes: [],
+    contractingTypes: [],
     businessCharacteristics: [],
     email: '',
     firstName: '',
@@ -102,11 +105,34 @@ const GetQuote = () => {
     'None of the above',
   ];
 
+  const contractingTypeList = [
+    'General contractor',
+    'Carpentry',
+    'Handyman',
+    'Hardscaping',
+    'Landscaping',
+    'Roofing',
+    'Electrical',
+    'Plumbing',
+    'HVAC',
+    'Renovation',
+    'Demolition',
+    'Masonry',
+    'Window installation',
+    'Concrete',
+    'Debris Hauling',
+    'Cabinets',
+    'Pressure washing',
+    'Cleaning service',
+    'Other',
+  ];
+
   const steps = [
-    { number: 1, title: 'Coverage', active: currentStep === 1 },
-    { number: 2, title: 'My Business', active: currentStep === 2 },
-    { number: 3, title: 'Contact Info', active: currentStep === 3 },
-    { number: 4, title: 'Finish', active: currentStep === 4 },
+    { number: 1, title: 'COVERAGE', active: currentStep === 1 },
+    { number: 2, title: 'INDUSTRY', active: currentStep === 2 },
+    { number: 3, title: 'MY BUSINESS', active: currentStep === 3 },
+    { number: 4, title: 'CONTACT INFO', active: currentStep === 4 },
+    { number: 5, title: 'Finish', active: currentStep === 5 },
   ];
 
   const workTypes =
@@ -119,6 +145,14 @@ const GetQuote = () => {
       : [...formData.workTypes, workType];
 
     setFormData({ ...formData, workTypes: updatedWorkTypes });
+  };
+
+  const handleContractingTypeToggle = (type: string) => {
+    const updated = formData.contractingTypes.includes(type)
+      ? formData.contractingTypes.filter((t) => t !== type)
+      : [...formData.contractingTypes, type];
+
+    setFormData({ ...formData, contractingTypes: updated });
   };
 
   const handleBusinessCharacteristicToggle = (characteristic: string) => {
@@ -146,7 +180,7 @@ const GetQuote = () => {
         description: "We'll contact you shortly with your personalized quote.",
       });
 
-      setCurrentStep(4);
+      setCurrentStep(5);
     } catch (error) {
       toast({
         title: 'Error',
@@ -172,7 +206,7 @@ const GetQuote = () => {
 
       <main className="min-h-screen bg-gradient-to-b from-background to-muted/20 pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {currentStep < 4 && (
+          {currentStep < 5 && (
             <div className="flex justify-center mb-12">
               <div className="flex items-center space-x-4">
                 {steps.map((step, index) => (
@@ -225,28 +259,37 @@ const GetQuote = () => {
           )}
 
           {currentStep === 2 && (
-            <StepBusiness
-              items={businessCharacteristics}
-              selected={formData.businessCharacteristics}
-              email={formData.email}
-              onToggle={handleBusinessCharacteristicToggle}
-              onEmailChange={(email) => setFormData({ ...formData, email })}
+            <StepIndustry
+              selected={formData.contractingTypes}
+              onToggle={handleContractingTypeToggle}
               onNext={() => setCurrentStep(3)}
               onBack={() => setCurrentStep(1)}
             />
           )}
 
           {currentStep === 3 && (
+            <StepBusiness
+              items={businessCharacteristics}
+              selected={formData.businessCharacteristics}
+              email={formData.email}
+              onToggle={handleBusinessCharacteristicToggle}
+              onEmailChange={(email) => setFormData({ ...formData, email })}
+              onNext={() => setCurrentStep(4)}
+              onBack={() => setCurrentStep(2)}
+            />
+          )}
+
+          {currentStep === 4 && (
             <StepContact
               formData={formData}
               setFormData={setFormData}
               isSubmitting={isSubmitting}
               onSubmit={handleSubmit}
-              onBack={() => setCurrentStep(2)}
+              onBack={() => setCurrentStep(3)}
             />
           )}
 
-          {currentStep === 4 && <StepFinish />}
+          {currentStep === 5 && <StepFinish />}
         </div>
       </main>
 
