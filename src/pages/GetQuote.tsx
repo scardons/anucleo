@@ -167,13 +167,20 @@ const GetQuote = () => {
     setIsSubmitting(true);
 
     try {
-      const emailData = {
-        to: ['services@anucleo.com'],
-        subject: `New Quote Request - ${formData.industry}`,
-        data: formData,
-      };
+      const response = await fetch('/api/send-quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: ['services@anucleo.com'],
+          subject: `New Quote Request - ${formData.industry}`,
+          data: formData,
+        }),
+      });
 
-      console.log('Quote data:', emailData);
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to send');
+      }
 
       toast({
         title: 'Quote Request Submitted!',
