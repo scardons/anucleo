@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
+import ChatBot from "@/components/chat/ChatBot";
 import Index from "./pages/Index";
 import UmbrellaInsurance from "./pages/UmbrellaInsurance";
 import CommercialInsurance from "./pages/CommercialInsurance";
@@ -15,6 +16,8 @@ import GetQuote from "./pages/GetQuote";
 import WorkersComp from "./pages/WorkersComp";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import EmployeeLogin from "./pages/EmployeeLogin";
+import EmployeeDashboard from "./pages/EmployeeDashboard";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -40,10 +43,13 @@ const App = () => (
             <Route path="/workers-comp" element={<WorkersComp />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/employee/login" element={<EmployeeLogin />} />
+            <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ChatBot />
         </BrowserRouter>
       </TooltipProvider>
     </HelmetProvider>

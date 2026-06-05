@@ -171,7 +171,7 @@ const GetQuote = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: ['services@anucleo.com'],
+          to: ['techsupport@anucleo.com'],
           subject: `New Quote Request - ${formData.industry}`,
           data: formData,
         }),

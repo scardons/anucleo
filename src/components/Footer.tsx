@@ -202,6 +202,13 @@ const Footer = () => {
               >
                 Licensing
               </Link>
+
+              <Link
+                to="/employee/login"
+                className="text-muted-foreground/50 hover:text-amber-500 transition-colors duration-200 text-xs"
+              >
+                Employee Portal
+              </Link>
             </div>
           </div>
         </motion.div>

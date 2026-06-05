@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import { Resend } from 'resend';
+import { findBestResponse } from './chatbot/faq.js';
 
 // Configurar dotenv desde server/.env
 const __filename = fileURLToPath(import.meta.url);
@@ -76,6 +77,59 @@ app.post('/api/send-quote', async (req, res) => {
   } catch (err) {
     console.error('💥 Error en el servidor:', err);
     return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/chat', (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ success: false, error: 'Message is required' });
+    }
+
+    const response = findBestResponse(message);
+
+    return res.json({ success: true, response });
+  } catch (err) {
+    console.error('💥 Chat error:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+const employees = [
+  { email: 'servando@anucleo.com', password: 'anucleo2025', name: 'Servando Velazquez', role: 'admin' },
+  { email: 'yamil@anucleo.com', password: 'anucleo2025', name: 'Yamil Morales', role: 'agent' },
+  { email: 'zonayad@anucleo.com', password: 'anucleo2025', name: 'Zonayad Akbar', role: 'agent' },
+];
+
+app.post('/api/employee/login', (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' });
+    }
+
+    const employee = employees.find(
+      (emp) => emp.email === email.toLowerCase() && emp.password === password
+    );
+
+    if (!employee) {
+      return res.status(401).json({ success: false, error: 'Invalid email or password' });
+    }
+
+    return res.json({
+      success: true,
+      employee: {
+        email: employee.email,
+        name: employee.name,
+        role: employee.role,
+      },
+    });
+  } catch (err) {
+    console.error('💥 Employee login error:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
