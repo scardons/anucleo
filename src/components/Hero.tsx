@@ -25,18 +25,22 @@ const Hero = () => {
       title: 'General Contracting',
       desc: 'Contractors and builders coverage',
       price: 'For contractors',
+      link: '/get-quote?industry=construction',
     },
     {
       icon: Home,
       title: 'Home',
       desc: 'Protection for your home and belongings',
       price: 'Home coverage',
+      link: '/get-quote?industry=home',
     },
     {
       icon: Car,
       title: 'Auto',
       desc: 'Coverage for vehicles and drivers',
       price: 'Auto insurance',
+      highlight: true,
+      link: '/get-quote?industry=auto',
     },
     {
       icon: Building2,
@@ -44,44 +48,59 @@ const Hero = () => {
       desc: 'Protect your business and liability',
       price: 'Most popular',
       highlight: true,
+      link: '/get-quote?industry=commercial',
     },
   ];
 
-  const ServiceCard = ({ item }: any) => (
-    <div
-      className={`rounded-2xl bg-white p-5 shadow-md border transition hover:shadow-xl hover:-translate-y-1 ${
-        item.highlight ? 'border-2 border-blue-600' : 'border-gray-100'
-      }`}
-    >
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50">
-          <item.icon className="h-6 w-6 text-blue-600" />
+  const ServiceCard = ({ item }: any) => {
+    const highlighted = item.highlight;
+    return (
+      <Link to={item.link} className="block relative">
+        {highlighted && (
+          <div className="absolute -top-2.5 left-4 z-10 rounded-full bg-blue-600 px-3.5 py-1 text-[10px] font-bold text-white uppercase tracking-wider shadow-md">
+            Most popular
+          </div>
+        )}
+        <div
+          className={`rounded-2xl p-5 shadow-lg border-2 transition hover:shadow-xl hover:-translate-y-1 ${
+            highlighted
+              ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-white'
+              : 'border-gray-100 bg-white'
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
+              highlighted ? 'bg-blue-100' : 'bg-blue-50'
+            }`}>
+              <item.icon className={`h-6 w-6 ${highlighted ? 'text-blue-700' : 'text-blue-600'}`} />
+            </div>
+
+            <div className="text-left">
+              <h3 className={`text-lg font-semibold ${highlighted ? 'text-blue-900' : 'text-gray-900'}`}>
+                {item.title}
+              </h3>
+
+              <p className={`mt-1 text-sm ${highlighted ? 'text-blue-600' : 'text-gray-500'}`}>
+                {item.desc}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-4">
+            <p className={`text-xs font-semibold uppercase ${highlighted ? 'text-blue-500' : 'text-gray-400'}`}>
+              {item.price}
+            </p>
+
+            <span className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 ${
+              highlighted ? 'bg-blue-700 shadow-md' : 'bg-blue-600'
+            }`}>
+              Get Quote
+            </span>
+          </div>
         </div>
-
-        <div className="text-left">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {item.title}
-          </h3>
-
-          <p className="mt-1 text-sm text-gray-500">
-            {item.desc}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-5 flex items-center justify-between gap-4">
-        <p className="text-xs font-semibold uppercase text-gray-400">
-          {item.price}
-        </p>
-
-        <Link to="/get-quote">
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
-            Get Quote
-          </button>
-        </Link>
-      </div>
-    </div>
-  );
+      </Link>
+    );
+  };
 
   return (
     <section

@@ -8,8 +8,6 @@ import { useGSAP, animateInView, staggerAnimateInView } from '@/hooks/use-gsap';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import servandoPhoto from '@/assets/team/servando-velazquez.jpg';
-import yamilPhoto from '@/assets/team/yamil-morales.jpg';
-import zonayadPhoto from '@/assets/team/zonayad-akbar.jpg';
 
 const About = () => {
   useLenis();
@@ -62,22 +60,7 @@ const About = () => {
       website: 'https://www.anucleo.com',
       photo: servandoPhoto
     },
-    {
-      name: 'Yamil Morales',
-      role: 'Chief Technology Officer',
-      description: 'Yamil oversees our technology infrastructure and digital innovation, ensuring our clients have access to cutting-edge insurance solutions and seamless digital experiences.',
-      linkedin: 'https://www.linkedin.com/in/morproceo',
-      website: 'https://www.morproventures.com',
-      photo: yamilPhoto
-    },
-    {
-      name: 'Zonayad Akbar',
-      role: 'Director of Sales',
-      description: 'Zonayad leads our sales team with expertise in understanding client needs and connecting them with the right insurance solutions for their unique situations.',
-      linkedin: 'https://www.linkedin.com/in/zonayad-akbar/',
-      website: 'https://www.morproventures.com',
-      photo: zonayadPhoto
-    }
+
   ];
 
   return (
@@ -199,14 +182,14 @@ const About = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 fade-in-up">
             <h2 className="text-4xl font-bold text-gradient mb-6">
-              Our Professional Team
+              Meet Our President
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Led by President Servando Velazquez, our team of industry professionals combines decades of insurance expertise with a genuine passion for helping others.
+              With decades of insurance expertise and a genuine passion for helping others, President Servando Velazquez leads Anucleo with integrity and a commitment to personalized protection.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="flex justify-center gap-8 flex-wrap">
             {teamMembers.map((member, index) => (
               <div key={index} className="team-member group">
                 <div className="bg-card border border-border rounded-2xl p-8 shadow-card hover:shadow-elegant transition-all duration-300 transform hover:-translate-y-2">

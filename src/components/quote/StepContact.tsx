@@ -1,11 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
-import { ArrowLeft, User, Phone, Building2, MapPin } from 'lucide-react';
+import { ArrowLeft, User, Phone, Building2, MapPin, Mail } from 'lucide-react';
 
 const StepContact = ({ formData, setFormData, onSubmit, onBack }: any) => {
   const isValid =
     formData.firstName &&
+    formData.email?.trim() &&
+    formData.email.includes('@') &&
     formData.phone &&
     formData.businessName &&
     formData.address;
@@ -30,6 +32,23 @@ const StepContact = ({ formData, setFormData, onSubmit, onBack }: any) => {
 
       {/* FORM */}
       <div className="grid gap-6">
+
+        <div className="relative">
+          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Input
+            type="email"
+            placeholder="you@example.com"
+            value={formData.email}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
+            className="pl-12 h-12 text-base"
+          />
+        </div>
+
+        <p className="-mt-4 text-sm text-gray-500">
+          We'll use this to save your quote request and follow up with you.
+        </p>
 
         <div className="relative">
           <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />

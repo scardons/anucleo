@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
-import ChatBot from "@/components/chat/ChatBot";
+import ChatWidget from "@/components/chat/ChatWidget";
 import Index from "./pages/Index";
 import UmbrellaInsurance from "./pages/UmbrellaInsurance";
 import CommercialInsurance from "./pages/CommercialInsurance";
@@ -21,6 +21,7 @@ import EmployeeDashboard from "./pages/EmployeeDashboard";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import CheapInsuranceNJ from "./pages/CheapInsuranceNJ";
 
 const queryClient = new QueryClient();
 
@@ -47,9 +48,10 @@ const App = () => (
             <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/cheap-insurance-new-jersey" element={<CheapInsuranceNJ />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <ChatBot />
+          <ChatWidget />
         </BrowserRouter>
       </TooltipProvider>
     </HelmetProvider>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Users,
   Search,
@@ -13,14 +13,26 @@ import {
   Briefcase,
   UserPlus,
   Settings,
+  Loader2,
+  Trash2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 type Department = {
-  id: string;
+  id: number;
   name: string;
-  userCount: number;
-  laptopCount: number;
 };
 
 type AppUser = {
@@ -28,19 +40,9 @@ type AppUser = {
   name: string;
   email: string;
   role: string;
-  departmentId: string;
-  manager: string;
-  broker: string;
+  department_id: number;
+  department_name: string;
 };
-
-const departments: Department[] = [
-  { id: "ceo", name: "CEO", userCount: 3, laptopCount: 2 },
-  { id: "ventas", name: "Ventas", userCount: 0, laptopCount: 0 },
-];
-
-const mockUsers: AppUser[] = [
-  { id: 1, name: "Servando Velazquez", email: "servando@anucleo.com", role: "admin", departmentId: "ceo", manager: "—", broker: "—" },
-];
 
 const allRoles = ["admin", "manager", "staff", "broker"];
 
@@ -48,32 +50,106 @@ export default function ClientsManager() {
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deptDialogOpen, setDeptDialogOpen] = useState(false);
+  const [deptName, setDeptName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  const confirmAndDelete = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this department? This cannot be undone.')) {
+      handleDeleteDepartment(id);
+    }
+  };
+
+  const handleDeleteDepartment = async (id: number) => {
+    setDeleting(id);
+    try {
+      const res = await fetch('/api/employee/departments.php', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'Department deleted' });
+        fetchUsers();
+      } else {
+        toast({ title: 'Error', description: data.error || 'Could not delete department.', variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Could not delete department.', variant: 'destructive' });
+    }
+    setDeleting(null);
+  };
+
+  const handleCreateDepartment = async () => {
+    if (!deptName.trim()) return;
+    setCreating(true);
+    try {
+      const res = await fetch('/api/employee/departments.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: deptName.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'Department created', description: `${deptName.trim()} has been added.` });
+        setDeptDialogOpen(false);
+        setDeptName("");
+        fetchUsers();
+      } else {
+        toast({ title: 'Error', description: data.error || 'Could not create department.', variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Could not create department.', variant: 'destructive' });
+    }
+    setCreating(false);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/employee/users.php');
+      const data = await res.json();
+      if (data.success) {
+        setUsers(data.users);
+        setDepartments(data.departments);
+      }
+    } catch {
+      console.error('Failed to fetch users');
+    }
+    setLoading(false);
+  };
 
   const filtered = useMemo(() => {
-    return mockUsers.filter((u) => {
-      if (deptFilter && u.departmentId !== deptFilter) return false;
+    return users.filter((u) => {
+      if (deptFilter && String(u.department_id) !== deptFilter) return false;
       if (roleFilter && u.role !== roleFilter) return false;
       if (search) {
         const q = search.toLowerCase();
         return (
           u.name.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
-          u.role.toLowerCase().includes(q) ||
-          u.manager.toLowerCase().includes(q) ||
-          u.broker.toLowerCase().includes(q)
+          u.role.toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [search, deptFilter, roleFilter]);
+  }, [search, deptFilter, roleFilter, users]);
 
   const grouped = useMemo(() => {
-    const map: Record<string, AppUser[]> = {};
+    const map: Record<number, AppUser[]> = {};
     for (const u of filtered) {
-      const dept = departments.find((d) => d.id === u.departmentId);
-      const key = dept?.id || "other";
-      if (!map[key]) map[key] = [];
-      map[key].push(u);
+      if (!map[u.department_id]) map[u.department_id] = [];
+      map[u.department_id].push(u);
     }
     return map;
   }, [filtered]);
@@ -82,9 +158,9 @@ export default function ClientsManager() {
   const clearFilters = () => { setSearch(""); setDeptFilter(""); setRoleFilter(""); };
 
   const stats = {
-    users: mockUsers.length,
+    users: users.length,
     departments: departments.length,
-    laptops: departments.reduce((s, d) => s + d.laptopCount, 0),
+    laptops: departments.length,
     pendingActa: 2,
   };
 
@@ -139,7 +215,7 @@ export default function ClientsManager() {
               </h2>
               <p className="mt-1 text-sm text-slate-500">
                 Showing <span className="font-bold text-blue-600">{filtered.length}</span> of{" "}
-                <span className="font-bold text-slate-900">{mockUsers.length}</span> users
+                <span className="font-bold text-slate-900">{users.length}</span> users
               </p>
             </div>
 
@@ -148,7 +224,7 @@ export default function ClientsManager() {
                 <UserPlus className="w-4 h-4" />
                 Register
               </button>
-              <button className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all">
+              <button onClick={() => setDeptDialogOpen(true)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all">
                 <Plus className="w-4 h-4" />
                 New Department
               </button>
@@ -161,10 +237,10 @@ export default function ClientsManager() {
                 Manage Roles
               </button>
               <button
-                onClick={clearFilters}
+                onClick={() => { clearFilters(); fetchUsers(); }}
                 className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all"
               >
-                <RefreshCw className={`w-4 h-4 ${activeFilters > 0 ? "animate-spin text-blue-600" : ""}`} />
+                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
                 Refresh
               </button>
             </div>
@@ -188,7 +264,7 @@ export default function ClientsManager() {
                 placeholder="All Departments"
                 options={[
                   { label: "All Departments", value: "" },
-                  ...departments.map((d) => ({ label: d.name, value: d.id })),
+                  ...departments.map((d) => ({ label: d.name, value: String(d.id) })),
                 ]}
                 onChange={setDeptFilter}
               />
@@ -215,97 +291,105 @@ export default function ClientsManager() {
           </div>
         </div>
 
+        {/* Loading */}
+        {loading && (
+          <div className="p-5 text-center text-slate-400">Loading users...</div>
+        )}
+
         {/* Department Cards */}
-        <div className="p-5 space-y-4">
-          {departments.map((dept) => {
-            const usersInDept = dept.id === deptFilter || !deptFilter
-              ? mockUsers.filter((u) => u.departmentId === dept.id)
-              : grouped[dept.id] || [];
+        {!loading && (
+          <div className="p-5 space-y-4">
+            {departments.map((dept) => {
+              const deptUsers = grouped[dept.id] || [];
+              const userCount = deptUsers.length;
+              const isFiltered = deptFilter && String(dept.id) !== deptFilter;
+              if (isFiltered) return null;
 
-            const isFiltered = deptFilter && deptFilter !== dept.id;
-            if (isFiltered) return null;
-
-            return (
-              <div key={dept.id} className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-4 bg-slate-50 border-b border-slate-200">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-md">
-                      <Building2 className="w-5 h-5" />
+              return (
+                <div key={dept.id} className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                  <div className="flex items-center justify-between px-5 py-4 bg-slate-50 border-b border-slate-200">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-md">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-slate-900">{dept.name}</h3>
+                        <p className="text-xs text-slate-500">
+                          {userCount} user{userCount !== 1 ? "s" : ""} registered in this department
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-slate-900">{dept.name}</h3>
-                      <p className="text-xs text-slate-500">
-                        {dept.userCount} user{dept.userCount !== 1 ? "s" : ""} registered in this department
-                      </p>
+                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5" />
+                        {userCount} users
+                      </span>
+                      <button
+                        onClick={() => confirmAndDelete(dept.id)}
+                        disabled={deleting === dept.id || userCount > 0}
+                        className="p-1.5 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed enabled:text-slate-400 enabled:hover:text-red-600 enabled:hover:bg-red-50"
+                        title={userCount > 0 ? 'Cannot delete department with assigned users' : 'Delete department'}
+                      >
+                        {deleting === dept.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" />
-                      {dept.userCount} users
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Laptop className="w-3.5 h-3.5" />
-                      {dept.laptopCount} laptops
-                    </span>
-                  </div>
-                </div>
 
-                {dept.userCount > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[700px] text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                          <th className="px-5 py-3 text-left">User</th>
-                          <th className="px-5 py-3 text-left">Email</th>
-                          <th className="px-5 py-3 text-left">Role</th>
-                          <th className="px-5 py-3 text-left">Status</th>
-                          <th className="px-5 py-3 text-center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {(grouped[dept.id] || []).map((user) => (
-                          <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-5 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-700">
-                                  {user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                                </div>
-                                <span className="font-medium text-slate-900">{user.name}</span>
-                              </div>
-                            </td>
-                            <td className="px-5 py-4 text-slate-600">{user.email}</td>
-                            <td className="px-5 py-4">
-                              <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700 capitalize">
-                                {user.role}
-                              </span>
-                            </td>
-                            <td className="px-5 py-4">
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                Active
-                              </span>
-                            </td>
-                            <td className="px-5 py-4 text-center">
-                              <button className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-all">
-                                View
-                              </button>
-                            </td>
+                  {userCount > 0 && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[700px] text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                            <th className="px-5 py-3 text-left">User</th>
+                            <th className="px-5 py-3 text-left">Email</th>
+                            <th className="px-5 py-3 text-left">Role</th>
+                            <th className="px-5 py-3 text-left">Status</th>
+                            <th className="px-5 py-3 text-center">Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {deptUsers.map((user) => (
+                            <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-5 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-700">
+                                    {user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                                  </div>
+                                  <span className="font-medium text-slate-900">{user.name}</span>
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 text-slate-600">{user.email}</td>
+                              <td className="px-5 py-4">
+                                <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700 capitalize">
+                                  {user.role}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  Active
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                <button className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-all">
+                                  View
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
 
-                {dept.userCount === 0 && (
-                  <div className="px-5 py-8 text-center">
-                    <p className="text-sm text-slate-400">No users registered in this department.</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  {userCount === 0 && (
+                    <div className="px-5 py-8 text-center">
+                      <p className="text-sm text-slate-400">No users registered in this department.</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
           {filtered.length === 0 && activeFilters > 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -318,7 +402,36 @@ export default function ClientsManager() {
             </div>
           )}
         </div>
+        )}
       </div>
+
+      <Dialog open={deptDialogOpen} onOpenChange={setDeptDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Department</DialogTitle>
+            <DialogDescription>
+              Enter the name of the department to create.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={deptName}
+              onChange={(e) => setDeptName(e.target.value)}
+              placeholder="Department name"
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCreateDepartment(); }}
+            />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={creating}>Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleCreateDepartment} disabled={creating || !deptName.trim()}>
+              {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

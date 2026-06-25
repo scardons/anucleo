@@ -92,6 +92,15 @@ const Footer = () => {
 
               <li>
                 <Link
+                  to="/cheap-insurance-new-jersey"
+                  className="text-muted-foreground hover:text-primary transition-colors duration-200"
+                >
+                  Cheap Insurance NJ
+                </Link>
+              </li>
+
+              <li>
+                <Link
                   to="/about"
                   className="text-muted-foreground hover:text-primary transition-colors duration-200"
                 >

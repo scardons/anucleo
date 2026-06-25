@@ -22,9 +22,10 @@ interface EmployeeLayoutProps {
   children: ReactNode;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  unreadSupport?: number;
 }
 
-const EmployeeLayout = ({ children, activeTab, onTabChange }: EmployeeLayoutProps) => {
+const EmployeeLayout = ({ children, activeTab, onTabChange, unreadSupport = 0 }: EmployeeLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();
@@ -124,7 +125,14 @@ const EmployeeLayout = ({ children, activeTab, onTabChange }: EmployeeLayoutProp
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <div className="relative">
+                    <item.icon className="h-5 w-5" />
+                    {item.id === 'support' && unreadSupport > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">
+                        {unreadSupport}
+                      </span>
+                    )}
+                  </div>
                   <span className="font-medium">{item.label}</span>
                 </button>
               ))}

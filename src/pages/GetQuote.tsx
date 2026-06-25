@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { CheckCircle2 } from 'lucide-react';
@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import StepCoverage from '@/components/quote/StepCoverage';
+import StepCarDetails from '@/components/quote/StepCarDetails';
 import StepIndustry from '@/components/quote/StepIndustry';
 import StepBusiness from '@/components/quote/StepBusiness';
 import StepContact from '@/components/quote/StepContact';
@@ -25,6 +26,17 @@ interface FormData {
   state: string;
 }
 
+interface CarData {
+  carYear: string;
+  carMake: string;
+  carModel: string;
+  carTrim: string;
+  carUse: string;
+  carDailyMiles: string;
+  carOwnership: string;
+  carFullCoverage: string;
+}
+
 const GetQuote = () => {
   const [searchParams] = useSearchParams();
   const industryFromUrl = searchParams.get('industry') || 'commercial';
@@ -33,7 +45,7 @@ const GetQuote = () => {
 
   const [formData, setFormData] = useState<FormData>({
     industry: industryFromUrl,
-    workTypes: [],
+    workTypes: industryFromUrl === 'auto' ? ['Commercial Auto'] : [],
     contractingTypes: [],
     businessCharacteristics: [],
     email: '',
@@ -45,6 +57,17 @@ const GetQuote = () => {
     state: 'California',
   });
 
+  const [carData, setCarData] = useState<CarData>({
+    carYear: '',
+    carMake: '',
+    carModel: '',
+    carTrim: '',
+    carUse: '',
+    carDailyMiles: '',
+    carOwnership: '',
+    carFullCoverage: '',
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -53,7 +76,6 @@ const GetQuote = () => {
       'General Liability',
       'Workers Compensation',
       'Umbrella',
-      'Commercial Auto',
       'Inland Marine',
       'Builders Risk',
       'Professional Liability',
@@ -127,13 +149,26 @@ const GetQuote = () => {
     'Other',
   ];
 
-  const steps = [
-    { number: 1, title: 'COVERAGE', active: currentStep === 1 },
-    { number: 2, title: 'INDUSTRY', active: currentStep === 2 },
-    { number: 3, title: 'MY BUSINESS', active: currentStep === 3 },
-    { number: 4, title: 'CONTACT INFO', active: currentStep === 4 },
-    { number: 5, title: 'Finish', active: currentStep === 5 },
-  ];
+  const hasAuto = useMemo(() => formData.workTypes.includes('Commercial Auto'), [formData.workTypes]);
+  const isConstruction = formData.industry === 'construction';
+
+  const steps = useMemo(() => {
+    const list: { number: number; title: string; active: boolean }[] = [];
+    let s = 0;
+    list.push({ number: ++s, title: 'COVERAGE', active: currentStep === s });
+    if (hasAuto) {
+      list.push({ number: ++s, title: 'CAR INFO', active: currentStep === s });
+    }
+    if (isConstruction && !hasAuto) {
+      list.push({ number: ++s, title: 'INDUSTRY', active: currentStep === s });
+    }
+    if (!hasAuto) {
+      list.push({ number: ++s, title: 'MY BUSINESS', active: currentStep === s });
+    }
+    list.push({ number: ++s, title: 'CONTACT INFO', active: currentStep === s });
+    list.push({ number: ++s, title: 'Finish', active: currentStep === s });
+    return list;
+  }, [currentStep, hasAuto, isConstruction]);
 
   const workTypes =
     workTypesByIndustry[formData.industry as keyof typeof workTypesByIndustry] ||
@@ -167,19 +202,18 @@ const GetQuote = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/send-quote', {
+      const response = await fetch('/api/send-quote.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: ['techsupport@anucleo.com'],
+          to: ['services@anucleo.com', 'techsupport@anucleo.com'],
           subject: `New Quote Request - ${formData.industry}`,
-          data: formData,
+          data: { ...formData, ...(hasAuto ? carData : {}) },
         }),
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to send');
+        throw new Error('Failed to send');
       }
 
       toast({
@@ -188,7 +222,7 @@ const GetQuote = () => {
       });
 
       setCurrentStep(5);
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to submit quote request. Please try again.',
@@ -255,48 +289,84 @@ const GetQuote = () => {
             </div>
           )}
 
-          {currentStep === 1 && (
-            <StepCoverage
-              workTypes={workTypes}
-              selected={formData.workTypes}
-              onToggle={handleWorkTypeToggle}
-              onNext={() => setCurrentStep(2)}
-              onBack={() => window.history.back()}
-            />
-          )}
+          {(() => {
+            let s = 1;
 
-          {currentStep === 2 && (
-            <StepIndustry
-              selected={formData.contractingTypes}
-              onToggle={handleContractingTypeToggle}
-              onNext={() => setCurrentStep(3)}
-              onBack={() => setCurrentStep(1)}
-            />
-          )}
+            if (currentStep === s) {
+              return (
+                <StepCoverage
+                  workTypes={workTypes}
+                  selected={formData.workTypes}
+                  onToggle={handleWorkTypeToggle}
+                  onNext={() => setCurrentStep(s + 1)}
+                  onBack={() => window.history.back()}
+                  industry={formData.industry}
+                  onIndustryChange={(ind: string) => setFormData({ ...formData, industry: ind, workTypes: ind === 'auto' ? ['Commercial Auto'] : [] })}
+                />
+              );
+            }
+            s++;
 
-          {currentStep === 3 && (
-            <StepBusiness
-              items={businessCharacteristics}
-              selected={formData.businessCharacteristics}
-              email={formData.email}
-              onToggle={handleBusinessCharacteristicToggle}
-              onEmailChange={(email) => setFormData({ ...formData, email })}
-              onNext={() => setCurrentStep(4)}
-              onBack={() => setCurrentStep(2)}
-            />
-          )}
+            if (hasAuto) {
+              if (currentStep === s) {
+                return (
+                  <StepCarDetails
+                    data={carData}
+                    onChange={setCarData}
+                    onNext={() => setCurrentStep(s + 1)}
+                    onBack={() => setCurrentStep(s - 1)}
+                  />
+                );
+              }
+              s++;
+            }
 
-          {currentStep === 4 && (
-            <StepContact
-              formData={formData}
-              setFormData={setFormData}
-              isSubmitting={isSubmitting}
-              onSubmit={handleSubmit}
-              onBack={() => setCurrentStep(3)}
-            />
-          )}
+            if (isConstruction && !hasAuto) {
+              if (currentStep === s) {
+                return (
+                  <StepIndustry
+                    selected={formData.contractingTypes}
+                    onToggle={handleContractingTypeToggle}
+                    onNext={() => setCurrentStep(s + 1)}
+                    onBack={() => setCurrentStep(s - 1)}
+                  />
+                );
+              }
+              s++;
+            }
 
-          {currentStep === 5 && <StepFinish />}
+            if (!hasAuto) {
+              if (currentStep === s) {
+                return (
+                <StepBusiness
+                  items={businessCharacteristics}
+                  selected={formData.businessCharacteristics}
+                  onToggle={handleBusinessCharacteristicToggle}
+                  onNext={() => setCurrentStep(s + 1)}
+                  onBack={() => setCurrentStep(s - 1)}
+                />
+                );
+              }
+              s++;
+            }
+
+            if (currentStep === s) {
+              return (
+                <StepContact
+                  formData={formData}
+                  setFormData={setFormData}
+                  isSubmitting={isSubmitting}
+                  onSubmit={handleSubmit}
+                  onBack={() => setCurrentStep(s - 1)}
+                />
+              );
+            }
+            s++;
+
+            if (currentStep === s) {
+              return <StepFinish />;
+            }
+          })()}
         </div>
       </main>
 
